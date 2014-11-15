@@ -1,21 +1,20 @@
 local Deviation = 0.01
 
+local function clone(t)
+	local o = {}
+	for i,v in ipairs(t) do
+		o[i] = v
+	end
+	return o
+end
+
 local function vec(x,y)
  	return {x=x, y=y}
 end
 
-local function vecSub(vecEnd,vecStart)
-	return vec(vecEnd.x - vecStart.x, vecEnd.y - vecStart.y)
-end
-
-local function debugInfo(vec)
- 	return "{ x = ".. vec.x .. " , y = " .. vec.y .. " },"
-end
-
-local function printTable( t)
-	for i,v in ipairs(t) do
-		print(i,debugInfo(v))
-	end
+local function cross(p1,p2,p3)
+ 	return 	(p2.x - p1.x)*(p3.y - p1.y)
+   		-	(p2.y - p1.y)*(p3.x - p1.x) 
 end 
 
 local function getLeftIndex(points)
@@ -36,37 +35,6 @@ local function getLeftIndex(points)
 	return leftIndex
 end
 
-local function squareDistance(vec1)
-	return vec1.x*vec1.x + vec1.y*vec1.y 
-end 
-
-local function stackValue(t,index)
-	local index = index and index or -1
-	local size = #t
-	if index >0 and index <=size then return t[index] end
-	if index <0 and index >=-size then return t[size +1 +index] end
-	return nil
-end
-
-local function stackTop(t)
- 	return t[#t]
-end 
-
-local function cross(p1,p2,p3)
- 	return 	(p2.x - p1.x)*(p3.y - p1.y)
-   		-	(p2.y - p1.y)*(p3.x - p1.x) 
-end 
-
-local function stackPush(t,v)
- 	t[#t+1] = v
-end
-
-local function stackPop(t)
- 	local pop = t[#t]
- 	table.remove(t,#t)
- 	return pop
-end 
- 
 local function longer(startP,endP1,endP2)
  	return ((endP2.x - startP.x)^2 + (endP2.y - startP.y)^2)
   		-  ((endP1.x - startP.x)^2 + (endP1.y - startP.y)^2)
@@ -94,39 +62,29 @@ local function isBetterVertice(startP,midP,checkP)
 	return false
 end
 
-local function clone(t)
-	local o = {}
-	for i,v in ipairs(t) do
-		o[i] = v
-	end
-	return o
+local function stackValue(t,index)
+	local index = index and index or -1
+	local size = #t
+	if index >0 and index <=size then return t[index] end
+	if index <0 and index >=-size then return t[size +1 +index] end
+	return nil
 end
 
-local function giftWrapping(points)
-	local  pointCount = #points
-	if pointCount < 3 then return nil end
+local function stackTop(t)
+ 	return t[#t]
+end 
 
-	local leftIndex = getLeftIndex(points)
-	local preIndex = leftIndex
-	local hull = {}
-	repeat
-		table.insert(hull,#hull+1,points[preIndex])
-		local bestIndex = 1
 
-		for i=2,pointCount do
-			if  bestIndex == preIndex 
-			or  isBetterVertice(points[preIndex],points[bestIndex],points[i]) 
-			then
-				bestIndex = i
-			end
-		end
 
-		preIndex = bestIndex
-	until (preIndex == leftIndex)
-
-	return hull
+local function stackPush(t,v)
+ 	t[#t+1] = v
 end
 
+local function stackPop(t)
+ 	local pop = t[#t]
+ 	table.remove(t,#t)
+ 	return pop
+end 
 local function sortPoints(points)
 	local leftIndex = getLeftIndex(points)
 	local leftPoint = points[leftIndex]
@@ -170,23 +128,34 @@ local function GrahamScan(points)
 end 
 
 
+local function giftWrapping(points)
+	local  pointCount = #points
+	if pointCount < 3 then return nil end
 
+	local leftIndex = getLeftIndex(points)
+	local preIndex = leftIndex
+	local hull = {}
+	repeat
+		table.insert(hull,#hull+1,points[preIndex])
+		local bestIndex = 1
 
-local function test()
-	local t = {vec(1,2),vec(1,1),vec(2,1),vec(0,0),vec(0,-1)}
-	local hull = giftWrapping(t) 
-	printTable(hull)
+		for i=2,pointCount do
+			if  bestIndex == preIndex 
+			or  isBetterVertice(points[preIndex],points[bestIndex],points[i]) 
+			then
+				bestIndex = i
+			end
+		end
+
+		preIndex = bestIndex
+	until (preIndex == leftIndex)
+
+	return hull
 end
 
-local function testConvexHull()
-	local t = {vec(1,2),vec(1,1),vec(2,1),vec(0,0),vec(0,-1)}
-	local hull = GrahamScan(t)
-	printTable(hull)
-end
 
-
-
-testConvexHull()
-print("------")
-test()
-
+return {
+	giftWrapping = giftWrapping,
+	GrahamScan = GrahamScan,
+	vec = vec
+}
